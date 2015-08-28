@@ -1,0 +1,13 @@
+{
+    "name": "hstools.api",
+    "version": "0.2.0",
+    "description": "node.js Backend for HStools Firefox Add-on",
+    "main": "index.js",
+    "scripts": {
+        "test": "mocha --require test/support/env --reporter spec --bail --check-leaks test/ test/acceptance/"
+    },
+    "author": "Heinrich Strauss",
+    "license": "GPL-2.0",
+    "repository": "ssh://git.l4me.net/git/webscale.co.za.git"
+}
+
