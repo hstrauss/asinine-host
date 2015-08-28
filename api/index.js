@@ -1,4 +1,5 @@
 'use strict';
+var debug = require('debug')('http')
 var http = require('http');
 var pg = require('pg');
 var dns = require('dns');
@@ -18,6 +19,7 @@ server.listen(PORT, server_log);
 //
 function handleRequest(request, response) {
     response.end('It Works!! Path Hit: ' + request.url);
+    debug('Connected from %s', request.url);
 }
 
 function server_log() {
