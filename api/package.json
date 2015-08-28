@@ -1,0 +1,12 @@
+{
+    "name": "hstools.api",
+    "version": "0.2.0",
+    "description": "node.js Backend for HStools Firefox Add-on",
+    "main": "index.js",
+    "scripts": {
+        "test": "/bin/true"
+    },
+    "author": "Heinrich Strauss",
+    "license": "GPL-2.0"
+}
+
