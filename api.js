@@ -7,10 +7,17 @@ var gni = require('./api/gni');
     res.send('hello ' + req.params.name);
     next();
 }*/
+// restify.defaultResponseHeaders = false;
+restify.defaultResponseHeaders = function (data) {
+    this.header('Cache-Control', 'private; max-age=0');
+};
 var server = restify.createServer();
+server.pre(restify.pre.userAgentConnection());
 // server.get('/api/gni/:name', respond);
 // server.head('/api/gni/:name', respond);
 server.get('/api/gni/:name', function (req, res, next) {
+    console.log('Connection from: ' + req.url);
+    // console.log(req.client.parser.socket);
     req.body = null;
     gni.get_net_info(req, res, null);
 });
