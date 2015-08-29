@@ -5,8 +5,8 @@ function respond(req, res, next) {
     next();
 }
 var server = restify.createServer();
-server.get('/api/:name', respond);
-server.head('/api/:name', respond);
+server.get('/api/gni/:name', respond);
+server.head('/api/gni/:name', respond);
 server.listen(2000, function () {
     console.log('%s listening at %s', server.name, server.url);
 });
