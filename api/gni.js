@@ -161,7 +161,8 @@ function get_host_info(_host, res) {
     var client = new pg.Client(connectionString);
     client.connect();
     p_address.then(function (data) {
-            var _row;
+            var _row, t_asnsv4 = [],
+                t_asnsv6 = [];
             // var r_asnsv4 = [];
             // var r_asnsv6 = [];
             r_addressesv4 = data.v4_dns;
@@ -180,7 +181,12 @@ function get_host_info(_host, res) {
                 var query = client.query(_get_asn_query);
                 query.on('row', function (row) {
                     // _row = row
-                    r_asnsv4.push({
+                    console.log('v4ASN:');
+                    console.log({
+                        n: row['asn'],
+                        d: row['description']
+                    });
+                    t_asnsv4.push({
                         n: row['asn'],
                         d: row['description']
                     });
@@ -188,10 +194,10 @@ function get_host_info(_host, res) {
                 query.on('end', function (result) {
                     // console.log('Before asn_v4_query kept, _asns:');
                     // console.log(_asns);
-                    if (r_asnsv4 == null) {
-                        r_asnsv4 = [];
+                    if (t_asnsv4 == null) {
+                        t_asnsv4 = [];
                     }
-                    p_asns.keep('v4_asns', r_asnsv4);
+                    p_asns.keep('v4_asns', t_asnsv4);
                     // console.log('Promise asn_v4_query kept!');
                 });
             }
@@ -201,14 +207,14 @@ function get_host_info(_host, res) {
             } else {
                 console.log(r_addressesv6.length + ' addressesv6');
             }
-            for (var i = 0; i < r_addressesv6.length; ++i) {
+            for (var j = 0; j < r_addressesv6.length; ++j) {
                 // var _get_asn_query = "SELECT asn FROM route_asn WHERE '" + r_addressesv6[i] + "' <<= address LIMIT 1;";
-                var _get_asn_query2 = "SELECT t2.asn AS asn,t2.description AS description FROM route_asn t1,asn_info t2 WHERE '" + r_addressesv6[i] + "' <<= t1.address and t1.asn=t2.asn LIMIT 1;";
-                // console.log(_get_asn_query);
+                var _get_asn_query2 = "SELECT t2.asn AS asn,t2.description AS description FROM route_asn t1,asn_info t2 WHERE '" + r_addressesv6[j] + "' <<= t1.address and t1.asn=t2.asn LIMIT 1;";
+                console.log(_get_asn_query2);
                 var query2 = client.query(_get_asn_query2);
                 query2.on('row', function (row) {
                     // _row = row;
-                    r_asnsv6.push({
+                    t_asnsv6.push({
                         n: row['asn'],
                         d: row['description']
                     });
@@ -216,10 +222,10 @@ function get_host_info(_host, res) {
                 query2.on('end', function (result) {
                     // console.log('Before asn_v6_query kept, _asns:');
                     // console.log(_asns);
-                    if (r_asnsv6 == null) {
-                        r_asnsv6 = [];
+                    if (t_asnsv6 == null) {
+                        t_asnsv6 = [];
                     }
-                    p_asns.keep('v6_asns', r_asnsv6);
+                    p_asns.keep('v6_asns', t_asnsv6);
                     // console.log('Promise asn_v6_query kept!');
                 });
             }
@@ -229,14 +235,85 @@ function get_host_info(_host, res) {
     p_asns.then(function (data) {
         // 'use strict';
         // console.log(p_asns._success);
-        console.log('r_asnsv4 =?= ', data.v4_asns);
+        console.log('r_asnsv4 =?= ', data.v4_asns.unique());
         console.log('r_asnsv6 =?= ', data.v6_asns);
-        r_asnsv4 = data.v4_asns;
-        r_asnsv6 = data.v6_asns;
-        var t_networksv4 = ['192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8', '192.0.2.0/24'];
-        p_networks.keep('v4_networks', t_networksv4);
-        var t_networksv6 = ['fc00::/8', '2001:db8::/32'];
-        p_networks.keep('v6_networks', t_networksv6);
+        var t_asnsv4 = data.v4_asns.unique();
+        var t_asnsv6 = data.v6_asns.unique();
+        var _prefixesv4 = [];
+        var _prefixesv6 = [];
+        var t_asn_networksv4 = [];
+        var t_asn_networksv6 = [];
+        var this_asnv4;
+        var this_asnv6;
+        if (t_asnsv4.length == 0) {
+            console.log('Kept v4_networks');
+            p_networks.keep('v4_networks', []);
+        } else {
+            // console.log('entering v4 asn->network loop');
+            for (var j = 0; j < t_asnsv4.length; ++j) {
+                t_asn_networksv4 = [];
+                // console.log('loop index:' + j);
+                this_asnv4 = t_asnsv4[j]['n'];
+                // console.log('this_asn:' + this_asn);
+                var _get_prefixes_query = "SELECT address,asn FROM route_asn WHERE family(address)=4 AND asn = " + this_asnv4 + " ORDER BY asn ASC;";
+                console.log(_get_prefixes_query);
+                var query2 = client.query(_get_prefixes_query);
+                query2.on('row', function (row) {
+                    t_asn_networksv4.push(row['address']);
+                });
+                query2.on('end', function (results) {
+                    // if (_prefixesv4 == null) {
+                    // _prefixesv4 = ['::/128'];
+                    // }
+                    // p_networks.keep('v6_networks', ['::/1']);
+                    _prefixesv4.push({
+                        asn: this_asnv4,
+                        prefixes: t_asn_networksv4
+                    });
+                    // console.log('total networks:', _prefixes.length);
+                    // return _prefixes;
+                });
+            }
+            p_networks.keep('v4_networks', _prefixesv4);
+            console.log('Kept v4_networks with data:');
+            console.log(_prefixesv4);
+        }
+        if (t_asnsv6.length == 0) {
+            console.log('Kept v6_networks');
+            p_networks.keep('v6_networks', []);
+        } else {
+            console.log('entering v6 asn->network loop');
+            for (var j = 0; j < t_asnsv6.length; ++j) {
+                t_asn_networksv6 = [];
+                this_asnv6 = t_asnsv6[j]['n'];
+                var _get_prefixes_query2 = "SELECT address,asn FROM route_asn WHERE family(address)=6 AND asn = " + this_asnv6 + " ORDER BY asn ASC;";
+                console.log(_get_prefixes_query2);
+                var query2 = client.query(_get_prefixes_query2);
+                query2.on('row', function (row) {
+                    t_asn_networksv6.push(row['address']);
+                    console.log(t_asn_networksv6);
+                });
+                query2.on('end', function (results) {
+                    // if (_prefixesv4 == null) {
+                    // _prefixesv4 = ['::/128'];
+                    // }
+                    // p_networks.keep('v6_networks', ['::/1']);
+                    _prefixesv6.push({
+                        asn: this_asnv6,
+                        prefixes: t_asn_networksv6
+                    });
+                    // console.log('total networks:', _prefixes.length);
+                    // return _prefixes;
+                });
+            }
+            p_networks.keep('v6_networks', _prefixesv6);
+            console.log('Kept v6_networks with data:');
+            console.log(_prefixesv6);
+        }
+        // var t_networksv4 = ['192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8', '192.0.2.0/24'];
+        // p_networks.keep('v4_networks', t_networksv4);
+        // var t_networksv6 = ['fc00::/8', '2001:db8::/32'];
+        // p_networks.keep('v6_networks', t_networksv6);
     }, function (err) {});
     p_networks.then(function (data) {
         // 'use strict';
@@ -283,10 +360,13 @@ function get_host_info(_host, res) {
     */
     // console.log(results);
     // return results;
-    // var t_addressesv4 = ['0.0.0.0'];
+    // var t_addressesv
+    // asnsv6: r_asnsv6,
+    // networksv4: r_networksv4, 4 = ['0.0.0.0'];
     // p_address.keep('v4_dns', t_addressesv4);
     // var t_addressesv6 = ['::'];
     // p_address.keep('v6_dns', t_addressesv6);
+    /*
     var t_asnsv4 = [{
         n: 65520,
         d: '(none)'
@@ -295,6 +375,7 @@ function get_host_info(_host, res) {
         n: 65520,
         d: '(none)'
     }];
+    */
     // p_asns.keep('v4_asns', t_asnsv4);
     // p_asns.keep('v6_asns', t_asnsv6);
     // var t_networksv4 = ['192.168.0.0/16', '172.16.0.0/12', '10.0.0.0/8', '192.0.2.0/24'];
