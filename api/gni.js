@@ -5,7 +5,8 @@ var pg = require('pg');
 var dns = require('dns');
 Array.prototype.contains = function (v) {
     for (var i = 0; i < this.length; i++) {
-        if (this[i] === v) return true;
+        // if (this[i] == v) return true;
+        if (JSON.stringify(this[i]) === JSON.stringify(v)) return true;
     }
     return false;
 };
@@ -22,7 +23,7 @@ Array.prototype.count_grand_children = function () {
 Array.prototype.unique = function () {
     var arr = [];
     for (var i = 0; i < this.length; i++) {
-        if (!arr.contains(this[i])) {
+        if (!(arr.contains(this[i]))) {
             arr.push(this[i]);
         }
     }
@@ -246,13 +247,16 @@ function get_host_info(_host, res) {
         } else {
             r_status = 'OK';
         }
+        console.log(r_asnsv4);
+        console.log('^ reduces to v');
+        console.log(r_asnsv4.unique());
         var temp_results = {
             host: _host,
             status: r_status,
             addressesv4: r_addressesv4,
             addressesv6: r_addressesv6,
-            asnsv4: r_asnsv4,
-            asnsv6: r_asnsv6,
+            asnsv4: r_asnsv4.unique(),
+            asnsv6: r_asnsv6.unique(),
             networksv4: r_networksv4.count_grand_children(),
             networksv6: r_networksv6.count_grand_children()
         };
